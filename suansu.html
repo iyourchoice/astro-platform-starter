@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>百化分随机测试（手机版）</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: "Arial", "微软雅黑", sans-serif;
+        }
+        body {
+            background-color: #f5f5f5;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .container {
+            width: 100%;
+            max-width: 400px;
+            background: white;
+            padding: 30px 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        .title {
+            font-size: 20px;
+            font-weight: 600;
+            text-align: center;
+            margin-bottom: 30px;
+            color: #333;
+        }
+        .question {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 25px;
+            color: #222;
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+        }
+        .input-group {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        #answerInput {
+            flex: 1;
+            padding: 12px 15px;
+            font-size: 18px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            outline: none;
+            text-align: center;
+        }
+        #answerInput:focus {
+            border-color: #4299e1;
+        }
+        .btn {
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: 500;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .submit-btn {
+            background-color: #4299e1;
+            color: white;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+        .submit-btn:hover {
+            background-color: #3182ce;
+        }
+        .next-btn {
+            background-color: #48bb78;
+            color: white;
+            width: 100%;
+            display: none;
+        }
+        .next-btn:hover {
+            background-color: #38a169;
+        }
+        .feedback {
+            height: 30px;
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 15px;
+            font-weight: 500;
+        }
+        .correct {
+            color: #48bb78;
+        }
+        .wrong {
+            color: #e53e3e;
+        }
+        .answer-hint {
+            text-align: center;
+            font-size: 17px;
+            color: #666;
+            margin-top: 10px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">百化分随机测试</h1>
+        <div class="question" id="question"></div>
+        <div class="input-group">
+            <input type="text" id="answerInput" placeholder="输入百分数（例：50% 或 33.3%）">
+        </div>
+        <button class="btn submit-btn" id="submitBtn">提交答案</button>
+        <button class="btn next-btn" id="nextBtn">下一题</button>
+        <div class="feedback" id="feedback"></div>
+        <div class="answer-hint" id="answerHint"></div>
+    </div>
+
+    <script>
+        // 百化分题库（完整对应关系）
+        const questionBank = [
+            { fraction: "1/2", answer: "50%" },
+            { fraction: "1/2.5", answer: "40%" },
+            { fraction: "1/3", answer: "33.3%" },
+            { fraction: "1/3.5", answer: "28.6%" },
+            { fraction: "1/4", answer: "25%" },
+            { fraction: "1/4.5", answer: "22.2%" },
+            { fraction: "1/5", answer: "20%" },
+            { fraction: "1/5.5", answer: "18.2%" },
+            { fraction: "1/6", answer: "16.7%" },
+            { fraction: "1/6.5", answer: "15.4%" },
+            { fraction: "1/7", answer: "14.3%" },
+            { fraction: "1/7.5", answer: "13.3%" },
+            { fraction: "1/8", answer: "12.5%" },
+            { fraction: "1/8.5", answer: "11.8%" },
+            { fraction: "1/9", answer: "11.1%" },
+            { fraction: "1/9.5", answer: "10.5%" },
+            { fraction: "1/10", answer: "10%" },
+            { fraction: "1/10.5", answer: "9.5%" },
+            { fraction: "1/11", answer: "9.1%" },
+            { fraction: "1/11.5", answer: "8.7%" },
+            { fraction: "1/12", answer: "8.3%" },
+            { fraction: "1/12.5", answer: "8%" },
+            { fraction: "1/13", answer: "7.7%" },
+            { fraction: "1/13.5", answer: "7.4%" },
+            { fraction: "1/14", answer: "7.1%" },
+            { fraction: "1/14.5", answer: "6.9%" },
+            { fraction: "1/15", answer: "6.7%" },
+            { fraction: "1/15.5", answer: "6.5%" },
+            { fraction: "1/16", answer: "6.25%" },
+            { fraction: "1/16.5", answer: "6%" },
+            { fraction: "1/17", answer: "5.9%" },
+            { fraction: "1/18", answer: "5.6%" },
+            { fraction: "1/19", answer: "5.3%" },
+            { fraction: "1/2.4", answer: "42%" },
+            { fraction: "1/2.7", answer: "37%" },
+            { fraction: "1/2.1", answer: "48%" },
+            { fraction: "1/20", answer: "5%" },
+            { fraction: "1/25", answer: "4%" },
+            { fraction: "1/1.9", answer: "53%" },
+            { fraction: "1/1.6", answer: "62.5%" }
+        ];
+
+        let currentQuestion = null;
+        const questionEl = document.getElementById("question");
+        const answerInput = document.getElementById("answerInput");
+        const submitBtn = document.getElementById("submitBtn");
+        const nextBtn = document.getElementById("nextBtn");
+        const feedbackEl = document.getElementById("feedback");
+        const answerHintEl = document.getElementById("answerHint");
+
+        // 随机获取一题（不重复）
+        let usedIndices = [];
+        function getRandomQuestion() {
+            if (usedIndices.length >= questionBank.length) usedIndices = []; // 重置题库
+            let randomIndex;
+            do {
+                randomIndex = Math.floor(Math.random() * questionBank.length);
+            } while (usedIndices.includes(randomIndex));
+            usedIndices.push(randomIndex);
+            return questionBank[randomIndex];
+        }
+
+        // 初始化题目
+        function initQuestion() {
+            currentQuestion = getRandomQuestion();
+            questionEl.textContent = `1/2=50%`;
+            questionEl.textContent = `${currentQuestion.fraction} = ?`;
+            answerInput.value = "";
+            feedbackEl.textContent = "";
+            answerHintEl.style.display = "none";
+            submitBtn.style.display = "block";
+            nextBtn.style.display = "none";
+            answerInput.focus();
+        }
+
+        // 验证答案（忽略空格、大小写，近似值允许±0.1%误差）
+        function checkAnswer(userAnswer) {
+            const standardAnswer = currentQuestion.answer.replace("%", "").trim();
+            const userAnswerClean = userAnswer.replace("%", "").trim();
+            
+            // 处理小数和整数的比较
+            const standardNum = parseFloat(standardAnswer);
+            const userNum = parseFloat(userAnswerClean);
+            
+            if (isNaN(userNum)) return false;
+            // 允许±0.1%的误差（适配近似值）
+            return Math.abs(userNum - standardNum) <= 0.1;
+        }
+
+        // 提交答案
+        submitBtn.addEventListener("click", () => {
+            const userAnswer = answerInput.value.trim();
+            if (!userAnswer) {
+                feedbackEl.textContent = "请输入答案！";
+                feedbackEl.className = "feedback";
+                return;
+            }
+
+            const isCorrect = checkAnswer(userAnswer);
+            if (isCorrect) {
+                feedbackEl.textContent = "正确！🎉";
+                feedbackEl.className = "feedback correct";
+            } else {
+                feedbackEl.textContent = "错误！❌";
+                feedbackEl.className = "feedback wrong";
+                answerHintEl.textContent = `正确答案：${currentQuestion.answer}`;
+                answerHintEl.style.display = "block";
+            }
+
+            submitBtn.style.display = "none";
+            nextBtn.style.display = "block";
+        });
+
+        // 下一题
+        nextBtn.addEventListener("click", initQuestion);
+
+        // 键盘回车提交
+        answerInput.addEventListener("keydown", (e) => {
+            if (e.key === "Enter" && submitBtn.style.display === "block") {
+                submitBtn.click();
+            }
+        });
+
+        // 初始化第一题
+        initQuestion();
+    </script>
+</body>
+</html>
